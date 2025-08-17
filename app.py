@@ -25,7 +25,7 @@ async def main():
 
     async with websockets.serve(
         echo,
-        host="",
+        host="0.0.0.0",
         port=8080,
         process_request=health_check,
     ):
@@ -34,4 +34,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
