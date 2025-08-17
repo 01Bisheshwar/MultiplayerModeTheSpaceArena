@@ -222,9 +222,26 @@ async def handler(websocket):
             ])
 
 async def main():
-    async with websockets.serve(handler, "0.0.0.0", 8765):
-        print("[SERVER] Running on ws://0.0.0.0:8765")
-        await asyncio.Future()
+    # Start WebSocket server
+    ws_server = await websockets.serve(handler, "0.0.0.0", 8765)
+    print("[SERVER] WebSocket running on ws://0.0.0.0:8765")
+
+    # HTTP health check
+    async def health(request):
+        return web.Response(text="OK")
+
+    app = web.Application()
+    app.add_routes([web.get("/", health), web.head("/", health)])
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", 10000)  # HTTP health check port
+    await site.start()
+    print("[SERVER] Health check HTTP running on :10000")
+
+    # Keep running forever
+    await asyncio.Future()
 
 if __name__ == "__main__":
     asyncio.run(main())
+
