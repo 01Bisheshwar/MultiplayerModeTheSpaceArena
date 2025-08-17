@@ -11,16 +11,15 @@ async def echo(websocket):
         await websocket.send(message)
 
 
-# Catch ALL non-WebSocket HTTP requests (Render health checks, curl, etc.)
+# Handle non-WebSocket HTTP requests (like Render health checks)
 async def process_request(path, request_headers):
-    # Render will hit HEAD / and GET /healthz
     if path in ["/", "/healthz"]:
-        return (
-            http.HTTPStatus.OK,
-            [("Content-Type", "text/plain")],
-            b"OK\n",   # body is ignored on HEAD, safe on GET
-        )
-    # Fallback for everything else
+        # If it's a HEAD request, don't return a body
+        if request_headers.get("Method", "GET") == "HEAD":
+            return http.HTTPStatus.OK, [("Content-Type", "text/plain")], b""
+        return http.HTTPStatus.OK, [("Content-Type", "text/plain")], b"OK\n"
+
+    # Anything else → 404
     return http.HTTPStatus.NOT_FOUND, [], b"Not Found\n"
 
 
@@ -32,7 +31,7 @@ async def main():
     async with websockets.serve(
         echo,
         host="0.0.0.0",
-        port=8080,  # Render sets $PORT, default 8080
+        port=8080,  # Render assigns this
         process_request=process_request,
     ):
         print("[SERVER] Running WebSocket + healthcheck on :8080")
