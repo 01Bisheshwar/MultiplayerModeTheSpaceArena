@@ -1,6 +1,7 @@
 import asyncio
 import websockets
 import json
+from aiohttp import web   # lightweight HTTP server for health check
 
 players = {}  # player_id: position
 connections = {}  # websocket: player_id
@@ -244,4 +245,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
