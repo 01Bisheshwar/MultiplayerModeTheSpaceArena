@@ -13,6 +13,15 @@ async def echo(websocket):
 
 # Handle non-WebSocket HTTP requests (like Render health checks)
 async def process_request(path, request_headers):
+    print("[SERVER] Incoming HTTP request:")
+    print("  Path:", path)
+    print("  Headers:", dict(request_headers))
+
+    if path in ["/", "/healthz"]:
+        return http.HTTPStatus.OK, [("Content-Type", "text/plain")], b"OK\n"
+
+    return http.HTTPStatus.NOT_FOUND, [], b"Not Found\n"
+
     if path in ["/", "/healthz"]:
         # If it's a HEAD request, don't return a body
         if request_headers.get("Method", "GET") == "HEAD":
@@ -40,3 +49,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
