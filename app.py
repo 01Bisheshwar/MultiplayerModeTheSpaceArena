@@ -13,7 +13,7 @@ async def echo(websocket):
 
 
 async def health_check(path, request_headers):
-    if path == "/healthz":
+    if path in ["/", "/healthz"]:   # allow both
         return http.HTTPStatus.OK, [], b"OK\n"
 
 
@@ -34,3 +34,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
