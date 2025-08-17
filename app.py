@@ -232,7 +232,7 @@ async def main():
         return web.Response(text="OK")
 
     app = web.Application()
-    app.add_routes([web.get("/", health), web.head("/", health)])
+    app.add_routes([web.get("/", health)])
 
     runner = web.AppRunner(app)
     await runner.setup()
@@ -245,5 +245,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
