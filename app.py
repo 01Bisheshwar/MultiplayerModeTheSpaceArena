@@ -1,52 +1,28 @@
-#!/usr/bin/env python
+import os
+from aiohttp import web
 
-import asyncio
-import http
-import signal
-import websockets
+PORT = int(os.environ.get("PORT", 5000))
 
+async def handle_root(request):
+    return web.Response(text="aiohttp WebSocket server is running!")
 
-async def echo(websocket):
-    async for message in websocket:
-        await websocket.send(message)
+async def websocket_handler(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
 
+    async for msg in ws:
+        if msg.type == web.WSMsgType.TEXT:
+            print(f"Received: {msg.data}")
+            await ws.send_str(f"Echo: {msg.data}")
+        elif msg.type == web.WSMsgType.ERROR:
+            print(f"WebSocket closed with exception {ws.exception()}")
 
-# Handle non-WebSocket HTTP requests (like Render health checks)
-async def process_request(path, request_headers):
-    print("[SERVER] Incoming HTTP request:")
-    print("  Path:", path)
-    print("  Headers:", dict(request_headers))
+    print("WebSocket connection closed")
+    return ws
 
-    if path in ["/", "/healthz"]:
-        return http.HTTPStatus.OK, [("Content-Type", "text/plain")], b"OK\n"
-
-    return http.HTTPStatus.NOT_FOUND, [], b"Not Found\n"
-
-    if path in ["/", "/healthz"]:
-        # If it's a HEAD request, don't return a body
-        if request_headers.get("Method", "GET") == "HEAD":
-            return http.HTTPStatus.OK, [("Content-Type", "text/plain")], b""
-        return http.HTTPStatus.OK, [("Content-Type", "text/plain")], b"OK\n"
-
-    # Anything else → 404
-    return http.HTTPStatus.NOT_FOUND, [], b"Not Found\n"
-
-
-async def main():
-    loop = asyncio.get_running_loop()
-    stop = loop.create_future()
-    loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
-
-    async with websockets.serve(
-        echo,
-        host="0.0.0.0",
-        port=8080,  # Render assigns this
-        process_request=process_request,
-    ):
-        print("[SERVER] Running WebSocket + healthcheck on :8080")
-        await stop
-
+app = web.Application()
+app.router.add_get("/", handle_root)
+app.router.add_get("/ws", websocket_handler)
 
 if __name__ == "__main__":
-    asyncio.run(main())
-
+    web.run_app(app, host="0.0.0.0", port=PORT)
